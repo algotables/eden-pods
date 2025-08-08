@@ -33,13 +33,133 @@ export default function Home() {
     loadPods();
   }, [account]);
 
-  async function connectWallet() {
-    if (!peraWallet) return;
-    const accounts = await peraWallet.connect();
-    const addr =
-      typeof accounts[0] === 'object' ? accounts[0].address : accounts[0];
-    setAccount(addr);
+  // Add this debug function to your pages/index.js
+function debugWalletState() {
+  console.log('=== WALLET DEBUG INFO ===');
+  console.log('peraWallet:', peraWallet);
+  console.log('account state:', account);
+  
+  if (peraWallet) {
+    console.log('peraWallet.connector:', peraWallet.connector);
+    console.log('peraWallet.accounts:', peraWallet.accounts);
+    console.log('peraWallet.connector?.accounts:', peraWallet.connector?.accounts);
   }
+  console.log('========================');
+}
+
+// Updated handleToss function with better debugging
+async function handleToss() {
+  if (!peraWallet || !account) {
+    alert('Wallet not connected properly');
+    return;
+  }
+  
+  setLoading(true);
+  
+  try {
+    // Debug wallet state before proceeding
+    debugWalletState();
+    
+    console.log('Getting location...');
+    
+    const gps = await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      
+      const timeout = setTimeout(() => {
+        reject(new Error('Location request timed out'));
+      }, 10000);
+      
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          clearTimeout(timeout);
+          console.log('Got location:', pos.coords.latitude, pos.coords.longitude);
+          resolve({
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude
+          });
+        },
+        err => {
+          clearTimeout(timeout);
+          console.error('Geolocation error:', err);
+          reject(new Error(`Location error: ${err.message}`));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 300000
+        }
+      );
+    });
+
+    console.log('Creating transaction...');
+    console.log('Account being passed to tossAPod:', account);
+    console.log('GPS:', gps);
+    
+    const txId = await tossAPod({ 
+      walletConnector: peraWallet, 
+      gps, 
+      account 
+    });
+    
+    console.log('Transaction successful:', txId);
+    alert(`Pod tossed! Transaction: ${txId}`);
+    
+    const list = await fetchMyPods({ address: account });
+    setPods(list);
+    
+  } catch (err) {
+    console.error('Full error:', err);
+    
+    let errorMessage = 'Failed to toss pod: ';
+    
+    if (err.message.includes('Address must not be null')) {
+      errorMessage += 'Wallet account not properly connected. Please disconnect and reconnect your wallet.';
+    } else if (err.message.includes('Location') || err.message.includes('geolocation')) {
+      errorMessage += 'Could not access your location. Please enable location permissions and try again.';
+    } else if (err.message.includes('User rejected')) {
+      errorMessage += 'Transaction was cancelled.';
+    } else {
+      errorMessage += err.message || 'Unknown error occurred.';
+    }
+    
+    alert(errorMessage);
+    
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Also update your connectWallet function with better debugging
+async function connectWallet() {
+  if (!peraWallet) return;
+  
+  try {
+    console.log('Connecting wallet...');
+    const accounts = await peraWallet.connect();
+    console.log('Raw accounts from connect:', accounts);
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from wallet');
+    }
+    
+    const addr = typeof accounts[0] === 'object' ? accounts[0].address : accounts[0];
+    console.log('Extracted address:', addr);
+    
+    if (!addr || typeof addr !== 'string') {
+      throw new Error('Invalid account format received from wallet');
+    }
+    
+    setAccount(addr);
+    console.log('Account set successfully:', addr);
+    
+  } catch (err) {
+    console.error('Wallet connection error:', err);
+    alert('Failed to connect wallet: ' + err.message);
+  }
+}
 
   async function handleToss() {
   if (!peraWallet || !account) {
