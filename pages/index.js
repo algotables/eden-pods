@@ -57,11 +57,9 @@ async function handleToss() {
   setLoading(true);
   
   try {
-    // Debug wallet state before proceeding
-    debugWalletState();
-    
     console.log('Getting location...');
     
+    // Add timeout and better error handling for geolocation
     const gps = await new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation not supported'));
@@ -70,7 +68,7 @@ async function handleToss() {
       
       const timeout = setTimeout(() => {
         reject(new Error('Location request timed out'));
-      }, 10000);
+      }, 10000); // 10 second timeout
       
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -89,13 +87,13 @@ async function handleToss() {
         {
           enableHighAccuracy: true,
           timeout: 8000,
-          maximumAge: 300000
+          maximumAge: 300000 // 5 minutes
         }
       );
     });
 
     console.log('Creating transaction...');
-    console.log('Account being passed to tossAPod:', account);
+    console.log('Account:', account);
     console.log('GPS:', gps);
     
     const txId = await tossAPod({ 
@@ -107,20 +105,22 @@ async function handleToss() {
     console.log('Transaction successful:', txId);
     alert(`Pod tossed! Transaction: ${txId}`);
     
+    // Refresh pods list
     const list = await fetchMyPods({ address: account });
     setPods(list);
     
   } catch (err) {
     console.error('Full error:', err);
     
+    // Show user-friendly error messages
     let errorMessage = 'Failed to toss pod: ';
     
-    if (err.message.includes('Address must not be null')) {
-      errorMessage += 'Wallet account not properly connected. Please disconnect and reconnect your wallet.';
-    } else if (err.message.includes('Location') || err.message.includes('geolocation')) {
+    if (err.message.includes('Location') || err.message.includes('geolocation')) {
       errorMessage += 'Could not access your location. Please enable location permissions and try again.';
     } else if (err.message.includes('User rejected')) {
       errorMessage += 'Transaction was cancelled.';
+    } else if (err.message.includes('No connected account')) {
+      errorMessage += 'Wallet connection lost. Please reconnect.';
     } else {
       errorMessage += err.message || 'Unknown error occurred.';
     }
