@@ -1,0 +1,18 @@
+{
+  "name": "Eden Pods Dev Container",
+  // Use the official Node.js 18 image for compatibility with Next.js
+  "image": "mcr.microsoft.com/vscode/devcontainers/javascript-node:18",
+  // Forward port 3000 so `npm run dev` exposes the Next.js site
+  "forwardPorts": [3000],
+  // Automatically install dependencies when the container is created
+  "postCreateCommand": "npm install",
+  // Recommend a few useful VS Code extensions
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
