@@ -50,7 +50,7 @@ export default function Home() {
           err => reject(err)
         );
       });
-      await tossAPod({ walletConnector: peraWallet, gps });
+      await tossAPod({ walletConnector: peraWallet, gps, account });
       const list = await fetchMyPods({ address: account });
       setPods(list);
     } catch (err) {
