@@ -11,7 +11,7 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "algosdk": "^2.3.0",
+    "algosdk": "^2.11.0",
     "tweetnacl": "^1.0.3",
     "@perawallet/connect": "^1.2.3"
   },
