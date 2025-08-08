@@ -11,9 +11,9 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "algosdk": "^2.11.0",
+    "algosdk": "^3.0.0",
     "tweetnacl": "^1.0.3",
-    "@perawallet/connect": "^1.2.3"
+    "@perawallet/connect": "^1.4.2"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
