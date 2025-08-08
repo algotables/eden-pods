@@ -47,91 +47,6 @@ function debugWalletState() {
   console.log('========================');
 }
 
-// Updated handleToss function with better debugging
-async function handleToss() {
-  if (!peraWallet || !account) {
-    alert('Wallet not connected properly');
-    return;
-  }
-  
-  setLoading(true);
-  
-  try {
-    console.log('Getting location...');
-    
-    // Add timeout and better error handling for geolocation
-    const gps = await new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-      
-      const timeout = setTimeout(() => {
-        reject(new Error('Location request timed out'));
-      }, 10000); // 10 second timeout
-      
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          clearTimeout(timeout);
-          console.log('Got location:', pos.coords.latitude, pos.coords.longitude);
-          resolve({
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude
-          });
-        },
-        err => {
-          clearTimeout(timeout);
-          console.error('Geolocation error:', err);
-          reject(new Error(`Location error: ${err.message}`));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 300000 // 5 minutes
-        }
-      );
-    });
-
-    console.log('Creating transaction...');
-    console.log('Account:', account);
-    console.log('GPS:', gps);
-    
-    const txId = await tossAPod({ 
-      walletConnector: peraWallet, 
-      gps, 
-      account 
-    });
-    
-    console.log('Transaction successful:', txId);
-    alert(`Pod tossed! Transaction: ${txId}`);
-    
-    // Refresh pods list
-    const list = await fetchMyPods({ address: account });
-    setPods(list);
-    
-  } catch (err) {
-    console.error('Full error:', err);
-    
-    // Show user-friendly error messages
-    let errorMessage = 'Failed to toss pod: ';
-    
-    if (err.message.includes('Location') || err.message.includes('geolocation')) {
-      errorMessage += 'Could not access your location. Please enable location permissions and try again.';
-    } else if (err.message.includes('User rejected')) {
-      errorMessage += 'Transaction was cancelled.';
-    } else if (err.message.includes('No connected account')) {
-      errorMessage += 'Wallet connection lost. Please reconnect.';
-    } else {
-      errorMessage += err.message || 'Unknown error occurred.';
-    }
-    
-    alert(errorMessage);
-    
-  } finally {
-    setLoading(false);
-  }
-}
-
 // Also update your connectWallet function with better debugging
 async function connectWallet() {
   if (!peraWallet) return;
@@ -162,88 +77,48 @@ async function connectWallet() {
 }
 
   async function handleToss() {
-  if (!peraWallet || !account) {
-    alert('Wallet not connected properly');
-    return;
-  }
-  
-  setLoading(true);
-  
-  try {
-    console.log('Getting location...');
-    
-    // Add timeout and better error handling for geolocation
-    const gps = await new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-      
-      const timeout = setTimeout(() => {
-        reject(new Error('Location request timed out'));
-      }, 10000); // 10 second timeout
-      
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          clearTimeout(timeout);
-          console.log('Got location:', pos.coords.latitude, pos.coords.longitude);
-          resolve({
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude
-          });
-        },
-        err => {
-          clearTimeout(timeout);
-          console.error('Geolocation error:', err);
-          reject(new Error(`Location error: ${err.message}`));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 300000 // 5 minutes
-        }
-      );
-    });
-
-    console.log('Creating transaction...');
-    console.log('Account:', account);
-    console.log('GPS:', gps);
-    
-    const txId = await tossAPod({ 
-      walletConnector: peraWallet, 
-      gps, 
-      account 
-    });
-    
-    console.log('Transaction successful:', txId);
-    alert(`Pod tossed! Transaction: ${txId}`);
-    
-    // Refresh pods list
-    const list = await fetchMyPods({ address: account });
-    setPods(list);
-    
-  } catch (err) {
-    console.error('Full error:', err);
-    
-    // Show user-friendly error messages
-    let errorMessage = 'Failed to toss pod: ';
-    
-    if (err.message.includes('Location') || err.message.includes('geolocation')) {
-      errorMessage += 'Could not access your location. Please enable location permissions and try again.';
-    } else if (err.message.includes('User rejected')) {
-      errorMessage += 'Transaction was cancelled.';
-    } else if (err.message.includes('No connected account')) {
-      errorMessage += 'Wallet connection lost. Please reconnect.';
-    } else {
-      errorMessage += err.message || 'Unknown error occurred.';
+    if (!peraWallet || !account) {
+      alert('Wallet not connected properly');
+      return;
     }
-    
-    alert(errorMessage);
-    
-  } finally {
-    setLoading(false);
+
+    setLoading(true);
+
+    try {
+      console.log('Creating transaction without GPS...');
+
+      const txId = await tossAPod({
+        walletConnector: peraWallet,
+        account
+      });
+
+      console.log('Transaction successful:', txId);
+      alert(`Pod tossed! Transaction: ${txId}`);
+
+      // Refresh pods list
+      const list = await fetchMyPods({ address: account });
+      setPods(list);
+
+    } catch (err) {
+      console.error('Full error:', err);
+
+      // Show user-friendly error messages
+      let errorMessage = 'Failed to toss pod: ';
+
+      if (err.message.includes('User rejected')) {
+        errorMessage += 'Transaction was cancelled.';
+      } else if (err.message.includes('No connected account')) {
+        errorMessage += 'Wallet connection lost. Please reconnect.';
+      } else {
+        errorMessage += err.message || 'Unknown error occurred.';
+      }
+
+      alert(errorMessage);
+
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   return (
     <div className="min-h-screen p-4">
