@@ -33,70 +33,47 @@ export default function Home() {
     loadPods();
   }, [account]);
 
-  // Add this debug function to your pages/index.js
-function debugWalletState() {
-  console.log('=== WALLET DEBUG INFO ===');
-  console.log('peraWallet:', peraWallet);
-  console.log('account state:', account);
-  
-  if (peraWallet) {
-    console.log('peraWallet.connector:', peraWallet.connector);
-    console.log('peraWallet.accounts:', peraWallet.accounts);
-    console.log('peraWallet.connector?.accounts:', peraWallet.connector?.accounts);
-  }
-  console.log('========================');
-}
+  // Ensure we always have a connected account before using it.
+  async function ensureAccount() {
+    if (account) return account;
+    if (!peraWallet) throw new Error('Wallet not initialized');
 
-// Also update your connectWallet function with better debugging
-async function connectWallet() {
-  if (!peraWallet) return;
-  
-  try {
-    console.log('Connecting wallet...');
     const accounts = await peraWallet.connect();
-    console.log('Raw accounts from connect:', accounts);
-    
     if (!accounts || accounts.length === 0) {
       throw new Error('No accounts returned from wallet');
     }
-    
+
     const addr = typeof accounts[0] === 'object' ? accounts[0].address : accounts[0];
-    console.log('Extracted address:', addr);
-    
-    if (!addr || typeof addr !== 'string') {
-      throw new Error('Invalid account format received from wallet');
+    if (!addr) {
+      throw new Error('No connected account');
     }
-    
     setAccount(addr);
-    console.log('Account set successfully:', addr);
-    
-  } catch (err) {
-    console.error('Wallet connection error:', err);
-    alert('Failed to connect wallet: ' + err.message);
+    return addr;
   }
-}
+
+  async function connectWallet() {
+    try {
+      await ensureAccount();
+    } catch (err) {
+      console.error('Wallet connection error:', err);
+      alert('Failed to connect wallet: ' + err.message);
+    }
+  }
 
   async function handleToss() {
-    if (!peraWallet || !account) {
-      alert('Wallet not connected properly');
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      console.log('Creating transaction without GPS...');
+      const addr = await ensureAccount();
+      setLoading(true);
 
       const txId = await tossAPod({
         walletConnector: peraWallet,
-        account
+        account: addr,
       });
 
-      console.log('Transaction successful:', txId);
       alert(`Pod tossed! Transaction: ${txId}`);
 
       // Refresh pods list
-      const list = await fetchMyPods({ address: account });
+      const list = await fetchMyPods({ address: addr });
       setPods(list);
 
     } catch (err) {
