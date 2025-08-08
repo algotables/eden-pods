@@ -13,7 +13,11 @@ export default function Home() {
       const wallet = new PeraWalletConnect();
       const accounts = await wallet.reconnectSession();
       if (accounts && accounts.length) {
-        setAccount(accounts[0]);
+        // Pera Wallet may return either a plain address string or an object
+        // containing the address. Normalize to a string for downstream use.
+        const addr =
+          typeof accounts[0] === 'object' ? accounts[0].address : accounts[0];
+        setAccount(addr);
       }
       setPeraWallet(wallet);
     }
@@ -32,7 +36,9 @@ export default function Home() {
   async function connectWallet() {
     if (!peraWallet) return;
     const accounts = await peraWallet.connect();
-    setAccount(accounts[0]);
+    const addr =
+      typeof accounts[0] === 'object' ? accounts[0].address : accounts[0];
+    setAccount(addr);
   }
 
   async function handleToss() {
